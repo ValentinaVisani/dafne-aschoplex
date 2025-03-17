@@ -35,13 +35,15 @@ def save_dicom_masks(base_path: str, mask_dict: dict, affine, dicom_headers: lis
         dicom_writer.save(medical_volume, dicom_path, fname_fmt='image%04d.dcm')
 
 
-def save_npy_masks(base_path, mask_dict):
+def save_npy_masks(base_path, mask_dict, affine):
+    mask_dict["orientation"]=nib.aff2axcodes(affine)
     for name, mask in mask_dict.items():
         npy_name = os.path.join(base_path, name + '.npy')
         np.save(npy_name, mask)
 
 
-def save_npz_masks(filename, mask_dict):
+def save_npz_masks(filename, mask_dict, affine):
+    mask_dict["orientation"]=nib.aff2axcodes(affine)
     np.savez_compressed(filename, **mask_dict)
 
 

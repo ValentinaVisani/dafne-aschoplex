@@ -2591,10 +2591,11 @@ class MuscleSegmentation(ImageShow, QObject):
         else:
             try:
                 ImageShow.loadDirectory(self, path)
-                # load original informations
-                original_volume = nib.load(path)
-                self.original_affine = original_volume.affine
-                self.original_headers = original_volume.header
+                if path.endswith(".nii.gz")| path.endswith(".nii"):
+                    # load original informations
+                    original_volume = nib.load(path)
+                    self.original_affine = original_volume.affine
+                    self.original_headers = original_volume.header
             except Exception as e:
                 __error(e)
                 return
@@ -2781,8 +2782,6 @@ class MuscleSegmentation(ImageShow, QObject):
             else:
                 self.incrementalLearningAffine[key][next_index] = self.affine
             
-        else:
-            affine_transform=self.affine
 
         if GlobalConfig['DO_INCREMENTAL_LEARNING']:
             # saving as bundle
@@ -2798,20 +2797,20 @@ class MuscleSegmentation(ImageShow, QObject):
                 self.setSplash(False)
 
         if outputType == 'dicom':
-            save_dicom_masks(pathOut, allMasks, affine_transform, self.dicomHeaderList)
+            save_dicom_masks(pathOut, allMasks, self.affine, self.dicomHeaderList)
         elif outputType == 'nifti':
             if get_model_detail(self.model_details, self.classifications[int(self.curImage)], 'dimensionality') == '3':
-                save_nifti_masks_3D(pathOut,next_index, allMasks, self.original_affine, self.affine, self.original_headers)
+                save_nifti_masks_3D(pathOut, next_index, allMasks, self.original_affine, self.affine, self.original_headers)
             else:
-                save_nifti_masks(pathOut, allMasks, affine_transform)
+                save_nifti_masks(pathOut, allMasks, self.affine)
         elif outputType == 'npy':
-            save_npy_masks(pathOut, allMasks)
+            save_npy_masks(pathOut, allMasks, self.affine)
         elif outputType == 'compact_dicom':
-            save_single_dicom_dataset(pathOut, allMasks, affine_transform, self.dicomHeaderList)
+            save_single_dicom_dataset(pathOut, allMasks, self.affine, self.dicomHeaderList)
         elif outputType == 'compact_nifti':
-            save_single_nifti(pathOut, allMasks, affine_transform)
+            save_single_nifti(pathOut, allMasks, self.affine)
         else: # assume the most generic outputType == 'npz':
-            save_npz_masks(pathOut, allMasks)
+            save_npz_masks(pathOut, allMasks, self.affine)
 
         self.setSplash(True, 1, 4, "Incremental learning...")
 
