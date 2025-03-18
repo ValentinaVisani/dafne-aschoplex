@@ -865,7 +865,12 @@ class MuscleSegmentation(ImageShow, QObject):
 
                 masklist = np.zeros(self.medical_volume.shape, dtype=np.uint8)
 
+                print("len imList: ", len(self.imList))
+
                 imageIndex = range(0, len(self.imList))
+
+                print('imageIndex: ', imageIndex)
+                print('self.medical_volume.shape[:2]: ', self.medical_volume.shape[:2])
                 roi = np.zeros(self.medical_volume.shape[:2], dtype=np.uint8)
 
                 for index in range(len(self.imList)):
@@ -889,12 +894,16 @@ class MuscleSegmentation(ImageShow, QObject):
 
                 try:
                     # print("try")
-                    originalSegmentation = originalSegmentationMasks[roiName][imageIndex]
+                    originalSegmentation = originalSegmentationMasks[roiName][:,:,imageIndex]
                 except KeyError:
                     originalSegmentation = None
 
                 if originalSegmentation is not None:
                     # diceScores.append(calc_dice_score(originalSegmentation, masklist))
+                    print('originalSegmentationMasks shape: ', originalSegmentationMasks[roiName].shape)
+                    print('originalSegmentation shape: ', originalSegmentation.shape)
+                    print('masklist shape: ', masklist.shape)
+
                     diceScores.append(calc_dice_score_3D(originalSegmentation, masklist))
                     n_voxels.append(np.sum(masklist[:]))
 
