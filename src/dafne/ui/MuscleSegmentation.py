@@ -2707,7 +2707,7 @@ class MuscleSegmentation(ImageShow, QObject):
     
     def count_saved_files(self):
         """Count the number of files saved in the temporary directory."""
-        folder_path = os.listdir(os.path.join(GlobalConfig['NUMPY_FILE_3D'], self.model_details[self.classifications[int(self.curImage)]]['model_name']))
+        folder_path = os.listdir(os.path.join(GlobalConfig['NUMPY_FILE_3D'], get_model_detail(self.model_details, self.classifications[int(self.curImage)], 'model_name')))
         return len([name for name in folder_path if name.endswith('.npz')])
     
     def load_saved_npz(self):
@@ -2797,7 +2797,7 @@ class MuscleSegmentation(ImageShow, QObject):
             if get_model_detail(self.model_details, self.classifications[int(self.curImage)], 'dimensionality') == '3':
                 self.setSplash(True, 0, 1, "Saving bundle...")
                 bundle = self.prepare_numpy_bundle_IL_3D(value_image, value_segm, meanDiceScore, key)
-                directory=os.path.join(GlobalConfig['NUMPY_FILE_3D'], self.model_details[self.classifications[int(self.curImage)]]['model_name'])
+                directory=os.path.join(GlobalConfig['NUMPY_FILE_3D'], get_model_detail(self.model_details, self.classifications[int(self.curImage)], 'model_name'))
                 
                 if not os.path.isdir(directory):
                     os.makedirs(directory)
