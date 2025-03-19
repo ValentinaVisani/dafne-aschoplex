@@ -2707,7 +2707,10 @@ class MuscleSegmentation(ImageShow, QObject):
     
     def count_saved_files(self):
         """Count the number of files saved in the temporary directory."""
-        folder_path = os.listdir(os.path.join(GlobalConfig['NUMPY_FILE_3D'], get_model_detail(self.model_details, self.classifications[int(self.curImage)], 'model_name')))
+        directory=os.path.join(GlobalConfig['NUMPY_FILE_3D'], get_model_detail(self.model_details, self.classifications[int(self.curImage)], 'model_name'))
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
+        folder_path = os.listdir(directory)
         return len([name for name in folder_path if name.endswith('.npz')])
     
     def load_saved_npz(self):
