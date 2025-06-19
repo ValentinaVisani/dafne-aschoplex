@@ -904,7 +904,7 @@ class MuscleSegmentation(ImageShow, QObject):
                     # print('originalSegmentation shape: ', originalSegmentation.shape)
                     # print('masklist shape: ', masklist.shape)
 
-                    diceScores.append(calc_dice_score_3D(originalSegmentation, masklist))
+                    diceScores.append(calc_dice_score(originalSegmentation, masklist))
                     n_voxels.append(np.sum(masklist[:]))
 
                 # TODO: maybe add this to the training according to the dice score?
@@ -992,7 +992,7 @@ class MuscleSegmentation(ImageShow, QObject):
         if np.sum(n_voxels) == 0:
             average_dice = -1.0
         else:
-            average_dice = np.average(diceScores, weights=n_voxels)
+            average_dice = np.average(diceScores) #, weights=n_voxels)
         print("Average Dice score", average_dice)
 
         return allMasks, dataForTraining, segForTraining, average_dice
@@ -2690,8 +2690,53 @@ class MuscleSegmentation(ImageShow, QObject):
     @separate_thread_decorator
     def saveBundle(self, path_out: str, comment: str):
         self.setSplash(True, 0, 1, "Saving bundle...")
-        bundle = self.prepare_numpy_bundle(comment)
-        np.savez_compressed(path_out, **bundle)
+
+        if get_model_detail(self.model_details, self.classifications[int(self.curImage)], 'dimensionality') == '3':
+            
+            self.setSplash(True, 0, 4, "Calculating maps...")
+            saved_files_count = self.count_saved_files()
+            print(f"saved_files_count {saved_files_count}")
+            total_next_indices = sum(len(indices_dict) for indices_dict in self.incrLearnDataTrain.values())
+
+            if saved_files_count > total_next_indices:
+                self.load_saved_npz()
+                total_next_indices = sum(len(indices_dict) for indices_dict in self.incrLearnDataTrain.values())
+                print(f"files count {total_next_indices}")
+            
+            allMasks, dataForTraining, segForTraining, meanDiceScore = self.calcOutputData(setSplash=True)   
+            next_index, key, value_image = self.add_to_incrLearnData(self.incrLearnDataTrain, dataForTraining) 
+            next_index, key, value_segm = self.add_to_incrLearnData(self.incrLearnSegTrain, segForTraining) 
+            
+            if key not in self.incrLearnMeanDice:
+                self.incrLearnMeanDice[key] = {} 
+                self.incrLearnMeanDice[key][next_index] = meanDiceScore
+            else:
+                self.incrLearnMeanDice[key][next_index] = meanDiceScore
+
+            affine_transform = self.original_affine 
+            # for incremental learning
+            if key not in self.incrementalLearningAffine:
+                self.incrementalLearningAffine[key] = {} 
+                self.incrementalLearningAffine[key][next_index] = self.affine
+            else:
+                self.incrementalLearningAffine[key][next_index] = self.affine
+            
+            bundle = self.prepare_numpy_bundle_IL_3D(value_image, value_segm, meanDiceScore, key, comment)
+            np.savez_compressed(path_out, **bundle)
+
+            if GlobalConfig['DO_INCREMENTAL_LEARNING']:
+
+                bundle = self.prepare_numpy_bundle_IL_3D(value_image, value_segm, meanDiceScore, key)
+                directory=os.path.join(GlobalConfig['NUMPY_FILE_3D'], get_model_detail(self.model_details, self.classifications[int(self.curImage)], 'model_name'))
+                
+                if not os.path.isdir(directory):
+                    os.makedirs(directory)
+
+                np.savez_compressed(os.path.join(directory, f'temp_{next_index}'), **bundle)
+                
+        else:
+            bundle = self.prepare_numpy_bundle(comment)
+            np.savez_compressed(path_out, **bundle)
         self.setSplash(False)
     
     def add_to_incrLearnData(self, incrLearnData, data):
