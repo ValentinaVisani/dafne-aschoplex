@@ -20,21 +20,23 @@ from ..config import GlobalConfig, load_config
 load_config()
 
 import tensorflow as tf
-import torch
+tf.config.set_visible_devices([], 'GPU')
 
 if GlobalConfig['USE_GPU_FOR'] == 'SAM Refinement':
     # force CPU for tensorflow
     tf.config.set_visible_devices([], 'GPU')
-elif GlobalConfig['USE_GPU_FOR'] == 'Both (careful!)':
-    gpus = tf.config.experimental.list_physical_devices('GPU')
-    if gpus:
-        try:
-            tf.config.experimental.set_virtual_device_configuration(
-                gpus[0],
-                [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=GlobalConfig['TENSORFLOW_MEMORY_ALLOCATION']*1000)])
-        except RuntimeError as e:
-            # Virtual devices must be set before GPUs have been initialized
-            print(e)
+    
+import torch
+#elif GlobalConfig['USE_GPU_FOR'] == 'Both (careful!)':
+#    gpus = tf.config.experimental.list_physical_devices('GPU')
+#    if gpus:
+#        try:
+#            tf.config.experimental.set_virtual_device_configuration(
+#                gpus[0],
+#                [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=GlobalConfig['TENSORFLOW_MEMORY_ALLOCATION']*1000)])
+#        except RuntimeError as e:
+#            # Virtual devices must be set before GPUs have been initialized
+#            print(e)
 
 import matplotlib
 from dafne_dl.common.biascorrection import biascorrection_image
